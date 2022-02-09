@@ -6,7 +6,7 @@ class Game
   attr_reader :word, :max_attempts
 
   def initialize
-    @word = YAML.load_file("words.yml").sample
+    @word = ""
     @current_word = ""
     @attempt = 0
     @max_attempts = 5
@@ -21,26 +21,21 @@ class Game
   end
 
   def intro
-    Paint["Welcome to Wordle! You got #{max_attempts} attempts to guess the correct 5 letter word!", :magenta]
+    puts <<~INTRO
+      #{Paint["Welcome to Wordle! You got #{max_attempts} attempts to guess the correct 5 letter word!", :magenta]}
+      Choose your difficulty:
+      #{Paint["1. Regular words", :yellow]}
+      #{Paint["2. Gotta name 'em all!", :cyan]}
+
+      Which option do you choose (1 or 2)?\n
+    INTRO
+    
+    get_option
   end
 
   def board
     @words.each do |row|
       puts row
-    end
-  end
-
-  def get_input
-    invalid = true
-    while invalid
-      new_word = gets.chomp.gsub(/\s+/, "")
-      
-      if new_word.length == 5
-        @current_word = new_word.downcase.split("")
-        invalid = false
-      else
-        puts Paint["Your word must be 5 characters long. Try again:", :red]
-      end
     end
   end
 
@@ -60,11 +55,17 @@ class Game
   def check_word
     if @current_word.join("") == @word
       @active = false
-      return "Congratulations! You solved the word #{Paint[@word, :green]} on attempt #{Paint[@attempt + 1, :green]}."
+      puts "Congratulations! You solved the word #{Paint[@word, :green]} on attempt #{Paint[@attempt + 1, :green]}."
     else
-      return response
+      puts response
     end
   end
+
+  def active?
+    @attempt < @max_attempts && @active
+  end
+
+  private
 
   def add_word_to_board
     colorized_word = ""
@@ -82,11 +83,37 @@ class Game
     @words[@attempt] = colorized_word
   end
 
-  def active?
-    @attempt < @max_attempts && @active
+  def get_input
+    invalid = true
+    while invalid
+      new_word = gets.chomp.gsub(/\s+/, "")
+      
+      if new_word.length == 5
+        @current_word = new_word.downcase.split("")
+        invalid = false
+      else
+        puts Paint["Your word must be 5 characters long. Try again:", :red]
+      end
+    end
   end
 
-  private
+  def get_option
+    invalid = true
+    
+    while invalid
+      option = gets.chomp
+
+      if option == "1"
+        @word = YAML.load_file("words.yml").sample
+        invalid = false
+      elsif option == "2"
+        @word = YAML.load_file("pokemon.yml").sample
+        invalid = false
+      else
+        puts Paint["Please choose between option 1 or 2.", :red]
+      end
+    end
+  end
 
   def response
     response = "Result:\n"
